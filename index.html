@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Formulario Hotel — Tesis UCATEBA</title>
+
+<!-- iOS "add to home screen" behavior -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Formulario Hotel">
+<meta name="theme-color" content="#1b3a5c">
+<link id="appleTouchIcon" rel="apple-touch-icon">
+<link id="manifestLink" rel="manifest">
+
+<style>
+  :root{
+    --navy:#1b3a5c;
+    --navy-deep:#122943;
+    --paper:#faf6ee;
+    --paper-2:#f1ead9;
+    --ink:#2a2420;
+    --accent:#d97b2b;
+    --accent-2:#c0562a;
+    --line:#d8cdb8;
+    --good:#3f7d5c;
+    --bad:#a3403f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Georgia', 'Iowan Old Style', serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .topbar{
+    background:var(--navy);
+    color:#fff;
+    padding:calc(14px + env(safe-area-inset-top)) 20px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .topbar h1{font-size:16px;margin:0;font-weight:normal;}
+  .topbar .sub{font-family:Arial, sans-serif;font-size:10.5px;opacity:.75;margin-top:2px;}
+  .topbar-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .topbar button{
+    font-family:Arial, sans-serif;
+    background:transparent;
+    border:1px solid rgba(255,255,255,.5);
+    color:#fff;
+    padding:7px 11px;
+    border-radius:3px;
+    cursor:pointer;
+    font-size:11px;
+  }
+  .topbar button:hover{background:rgba(255,255,255,.12);}
+
+  .stamp-track{
+    display:flex;
+    justify-content:center;
+    gap:5px;
+    padding:12px 10px 0;
+    background:var(--navy);
+    flex-wrap:wrap;
+  }
+  .stamp{
+    font-family:Arial, sans-serif;
+    font-size:10px;
+    letter-spacing:.4px;
+    color:#cdd8e4;
+    border:1.5px solid #4a6480;
+    border-radius:20px;
+    padding:5px 10px;
+    cursor:pointer;
+    background:transparent;
+  }
+  .stamp.active{border-color:var(--accent);color:#fff;background:rgba(217,123,43,.25);}
+  .stamp.done{border-color:var(--accent);color:#f3d9bd;}
+  .stamp.saved{border-color:var(--good);color:#fff;background:var(--good);}
+  .progress-line{
+    text-align:center;font-family:Arial, sans-serif;font-size:11px;color:#cdd8e4;
+    background:var(--navy);padding:6px 10px 12px;
+  }
+
+  .wrap{max-width:760px;margin:0 auto;padding:22px 16px 90px;}
+
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px 20px 8px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06);
+    position:relative;
+  }
+  .card::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg,var(--accent),var(--navy));border-radius:6px 6px 0 0;
+  }
+
+  .section-title{font-size:18px;color:var(--navy-deep);margin:0 0 4px;}
+  .section-hint{font-family:Arial, sans-serif;font-size:12px;color:#7a6f60;margin:0 0 18px;line-height:1.5;}
+
+  .field{margin-bottom:18px;}
+  .field label.q{display:block;font-size:14.5px;margin-bottom:7px;}
+  .field label.q .n{color:var(--accent-2);font-weight:bold;margin-right:4px;}
+  .field .helper{font-family:Arial, sans-serif;font-size:11px;color:#948970;margin-top:5px;}
+
+  input[type=text], input[type=number], input[type=date], input[type=time], input[type=tel], textarea, select{
+    font-family:Arial, sans-serif;font-size:14px;padding:9px 10px;border:1px solid var(--line);
+    border-radius:4px;background:var(--paper);color:var(--ink);width:100%;
+  }
+  textarea{min-height:56px;resize:vertical;}
+  input:focus, textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+  .options{display:flex;flex-wrap:wrap;gap:7px;}
+  .opt{
+    font-family:Arial, sans-serif;font-size:12.5px;border:1px solid var(--line);background:var(--paper);
+    padding:8px 12px;border-radius:20px;cursor:pointer;user-select:none;
+  }
+  .opt.selected{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .opt.selected.multi{background:var(--accent);border-color:var(--accent);}
+
+  .role-grid{display:grid;grid-template-columns:1.4fr 70px 1fr;gap:8px 10px;align-items:center;}
+  .role-grid .hd{font-family:Arial, sans-serif;font-size:10.5px;color:#948970;font-weight:bold;}
+  .role-grid .rlabel{font-family:Arial, sans-serif;font-size:13px;}
+  .role-grid input{width:100%;text-align:center;padding:6px;}
+  .toggle-chip{
+    font-family:Arial, sans-serif;font-size:11px;text-align:center;border:1px solid var(--line);
+    padding:6px 4px;border-radius:14px;cursor:pointer;background:var(--paper);
+  }
+  .toggle-chip.on{background:var(--good);border-color:var(--good);color:#fff;}
+
+  .score-box{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:16px;margin:6px 0 20px;
+    font-family:Arial, sans-serif;
+  }
+  .score-num{font-size:34px;font-weight:bold;color:var(--navy-deep);line-height:1;}
+  .score-label{display:inline-block;font-size:12px;font-weight:bold;padding:3px 10px;border-radius:12px;margin-left:10px;vertical-align:middle;}
+  .score-label.cumple{background:#dcefe3;color:var(--good);}
+  .score-label.parcial{background:#fbe8d3;color:var(--accent-2);}
+  .score-label.no{background:#f6dcdc;color:var(--bad);}
+  .score-note{font-size:11.5px;color:#7a6f60;margin-top:8px;line-height:1.5;}
+  .score-warn{font-size:11.5px;color:var(--bad);margin-top:6px;}
+  .override-row{margin-top:12px;}
+  .override-row .label{font-size:11px;color:#948970;margin-bottom:5px;}
+
+  .nav-row{display:flex;justify-content:space-between;padding:18px 0 24px;font-family:Arial, sans-serif;}
+  .nav-row button{font-size:13px;padding:10px 18px;border-radius:4px;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer;}
+  .nav-row button.ghost{background:transparent;color:var(--navy);}
+  .nav-row button:disabled{opacity:.35;cursor:not-allowed;}
+
+  .save-bar{display:flex;gap:10px;align-items:center;font-family:Arial, sans-serif;padding:14px 0 0;border-top:1px dashed var(--line);margin-top:8px;flex-wrap:wrap;}
+  .save-bar button{background:var(--accent);border:none;color:#fff;padding:11px 18px;border-radius:4px;font-size:13.5px;cursor:pointer;font-family:Arial, sans-serif;}
+  .save-bar button:hover{background:var(--accent-2);}
+  .save-msg{font-size:12px;}
+
+  .consent{display:flex;gap:10px;align-items:flex-start;font-family:Arial, sans-serif;font-size:12.5px;background:var(--paper-2);border:1px solid var(--line);border-radius:5px;padding:13px;margin:10px 0;}
+  .consent input{width:auto;margin-top:2px;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .library{background:#fff;border:1px solid var(--line);border-radius:6px;padding:18px;}
+  .lib-item{display:flex;justify-content:space-between;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:5px;margin-bottom:10px;font-family:Arial, sans-serif;background:var(--paper);flex-wrap:wrap;gap:8px;}
+  .lib-item .name{font-weight:bold;color:var(--navy-deep);font-size:14px;}
+  .lib-item .meta{font-size:11px;color:#8a7f6e;margin-top:2px;}
+  .lib-item .tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;margin-top:5px;font-weight:bold;}
+  .tag.cumple{background:#dcefe3;color:var(--good);}
+  .tag.parcial{background:#fbe8d3;color:var(--accent-2);}
+  .tag.no{background:#f6dcdc;color:var(--bad);}
+  .lib-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .lib-actions button{font-family:Arial, sans-serif;font-size:11.5px;padding:6px 9px;border-radius:4px;border:1px solid var(--line);background:#fff;cursor:pointer;}
+  .lib-actions button.danger{color:var(--bad);border-color:#e2b6b6;}
+  .empty{font-family:Arial, sans-serif;color:#8a7f6e;font-size:13px;text-align:center;padding:26px 0;}
+  .backup-row{font-family:Arial, sans-serif;font-size:11.5px;color:#7a6f60;text-align:center;padding:14px 0 4px;}
+  .backup-row button{font-family:Arial;font-size:11.5px;padding:6px 10px;border-radius:4px;border:1px solid var(--line);background:#fff;cursor:pointer;margin:0 4px;}
+
+  @media (max-width:600px){
+    .wrap{padding:14px 10px 70px;}
+    .card{padding:16px 14px 4px;}
+    .role-grid{grid-template-columns:1.2fr 55px 0.9fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Formulario de Selección de Hotel</h1>
+    <div class="sub">Tesis · Sistema de Gestión Hotelera · UCATEBA</div>
+  </div>
+  <div class="topbar-actions">
+    <button id="newEntryBtn">+ Nuevo hotel</button>
+    <button id="toggleLibrary">Hoteles guardados</button>
+  </div>
+</div>
+
+<div class="stamp-track" id="stampTrack"></div>
+<div id="progressLine" class="progress-line"></div>
+
+<div class="wrap">
+  <div id="formView">
+    <div class="card">
+      <div id="panels"></div>
+      <div class="nav-row">
+        <button class="ghost" id="btnBack">← Atrás</button>
+        <button id="btnNext">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="libraryView" style="display:none;">
+    <div class="library" id="libraryList"></div>
+    <div class="backup-row">
+      Respaldo manual (recomendado de vez en cuando):
+      <button onclick="downloadBackup()">Descargar respaldo</button>
+      <label style="cursor:pointer;border:1px solid var(--line);padding:6px 10px;border-radius:4px;background:#fff;">
+        Restaurar respaldo <input type="file" id="restoreFile" accept="application/json" style="display:none" onchange="restoreBackup(event)">
+      </label>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROLES = ["Recepción","Limpieza / Housekeeping","Administración / Dueño","Mantenimiento","Cocina / Restaurante","Seguridad","Otro"];
+const MUNICIPIOS = ["Barahona","Cabral","Enriquillo","Paraíso","Polo","Vicente Noble","Tamayo","Galván","Duvergé","Postrer Río","Otro"];
+
+const sections = [
+  {
+    id:"A", title:"A. Filtro rápido de viabilidad",
+    hint:"Se llena primero con el dueño/encargado, en 10-15 min. El puntaje de abajo se calcula solo con tus respuestas.",
+    fields:[
+      {id:"hotelName", label:"Nombre del hotel candidato", type:"text", required:true},
+      {id:"municipio", label:"Ubicación / municipio", type:"single-other", options:MUNICIPIOS},
+      {id:"softwareActual", label:"¿Tiene actualmente algún software de gestión instalado?", type:"single", options:["No tiene ningún software","Solo Excel / Google Sheets básico","Sí, tiene software"],
+        details:[{value:"Sí, tiene software", key:"softwareActual_detail", label:"¿Cuál?"}]},
+      {id:"habitaciones", label:"¿Cuántas habitaciones tiene?", type:"single", options:["Menos de 10","10–14","15–25 (ideal)","26–40 (ideal)","41–60","Más de 60"]},
+      {id:"ocupacion", label:"¿La ocupación es constante o muy estacional?", type:"single", options:["Constante / variable moderada (ideal)","Muy estacional (1-2 picos al año)","Casi siempre vacío"]},
+      {id:"personal", label:"¿Cuántas personas trabajan ahí en total?", type:"single", options:["1","2–3","4–6","7–10","Más de 10"]},
+      {id:"roles", label:"¿Hay más de un rol involucrado, o una sola persona maneja todo?", type:"single", options:["Más de un rol (ideal)","Una sola persona lo maneja todo"]},
+      {id:"huesped", label:"¿Qué tipo de huésped recibe principalmente?", type:"single-other", options:["Turismo / familiar / negocios (perfil estándar)"]},
+      {id:"metodoActual", label:"¿Cómo manejan reservas y registros actualmente?", type:"multi-other", options:["Cuaderno / papel","WhatsApp / llamadas","Excel u hoja de cálculo"]},
+      {id:"problemasFrecuentes", label:"¿Mencionan quejas o problemas frecuentes con el método actual?", type:"single", options:["No mencionan problemas","Sí, mencionan problemas ocasionales","Sí, tienen problemas claros y frecuentes"]},
+      {id:"disposicion", label:"¿El dueño/encargado está dispuesto a colaborar?", type:"single", options:["Sí, con disposición clara (ideal)","Con reservas / hay que insistir","No muestra interés"]},
+      {id:"accesibilidad", label:"¿Es accesible para visitas frecuentes?", type:"single", options:["Sí, fácil acceso","Está en municipio cercano","Difícil / distante"]},
+    ]
+  },
+  {
+    id:"B", title:"B. Datos generales del establecimiento",
+    hint:"Para Marco Contextual (Cap. II) y Delimitación (Cap. I).",
+    fields:[
+      {id:"nombreLegal", label:"Nombre legal completo", type:"text"},
+      {id:"direccion", label:"Dirección exacta", type:"text"},
+      {id:"anioFundacion", label:"Año de fundación", type:"number"},
+      {id:"propietario", label:"Propietario (nombre completo)", type:"text"},
+      {id:"administrador", label:"Administrador/encargado actual (si es diferente al dueño)", type:"text"},
+      {id:"telefonoHotel", label:"Teléfono de contacto del hotel", type:"tel"},
+      {id:"correoHotel", label:"Correo electrónico (si tiene)", type:"text"},
+      {id:"rnc", label:"¿Tiene RNC / registro formal?", type:"single", options:["Sí","No","En trámite"]},
+      {id:"misionVision", label:"¿Misión, visión o valores definidos?", type:"single", options:["Definida por escrito","Informal / de palabra","No tiene"],
+        details:[{value:"Definida por escrito", key:"misionVision_detail", label:"Anotarlos aquí (opcional)", area:true}]},
+      {id:"competencia", label:"Otros hoteles en la zona — ¿los consideran competencia directa? (opcional, breve)", type:"textarea"},
+      {id:"tiposHab", label:"Tipos de habitación (cantidad de cada una)", type:"role-count", options:["Individual","Doble","Suite","Otro tipo"]},
+      {id:"servicios", label:"Servicios adicionales que ofrece", type:"multi-other", options:["Restaurante / comedor","Estacionamiento","WiFi","Lavandería","Piscina","Ninguno adicional"]},
+      {id:"periodoMes", label:"Cuatrimestre de estudio asignado", type:"single", options:["Enero–Abril","Mayo–Agosto","Septiembre–Diciembre"]},
+      {id:"periodoAnio", label:"Año", type:"number", placeholder:"2026"},
+    ]
+  },
+  {
+    id:"C", title:"C. Problemática operativa actual",
+    hint:"La sección más importante: alimenta directamente el Planteamiento del Problema y la Justificación (Cap. I).",
+    fields:[
+      {id:"procesoReservas", label:"Describa brevemente el proceso actual de reservas, paso a paso", type:"textarea"},
+      {id:"canalesReserva", label:"¿Por qué canales llegan las reservas?", type:"multi-other", options:["Presencial (sin reservar)","Llamada telefónica","WhatsApp / mensaje","Correo electrónico","Plataforma digital (Booking, Airbnb...)","Redes sociales"],
+        details:[{value:"Plataforma digital (Booking, Airbnb...)", key:"canalesReserva_detail", label:"¿Cuál plataforma?"}]},
+      {id:"disponibilidadTiempoReal", label:"¿Cómo saben qué habitaciones están libres en un momento dado?", type:"single-other", options:["Pizarra o tablero físico","Preguntando al personal","Revisando el cuaderno","No hay método claro"]},
+      {id:"reservasSemanaNormal", label:"¿Reservas por semana en temporada normal?", type:"single", options:["Menos de 5","5–10","11–20","Más de 20"]},
+      {id:"reservasSemanaAlta", label:"¿Reservas por semana en temporada alta?", type:"single", options:["Menos de 5","5–10","11–20","Más de 20"]},
+      {id:"ocupAlta", label:"% de ocupación estimado en temporada alta", type:"single", options:["0–25%","26–50%","51–75%","76–100%"]},
+      {id:"ocupBaja", label:"% de ocupación estimado en temporada baja", type:"single", options:["0–25%","26–50%","51–75%","76–100%"]},
+      {id:"overbooking", label:"¿Ha ocurrido overbooking (misma habitación a dos clientes)?", type:"single", options:["Nunca","Rara vez","Frecuentemente"]},
+      {id:"reservasPerdidas", label:"¿Se ha perdido alguna reserva por error, olvido o falta de comunicación?", type:"single", options:["Nunca","Rara vez","Frecuentemente"]},
+      {id:"tiempoRegistroReserva", label:"¿Cuánto tiempo toma registrar una reserva con el método actual?", type:"single", options:["Menos de 5 min","5–15 min","15–30 min","Más de 30 min"]},
+      {id:"identificaClienteRepetido", label:"¿Pueden identificar si un cliente ya se hospedó antes?", type:"single", options:["Sí, fácilmente","Con dificultad","No, no lo saben"]},
+      {id:"datosClienteRegistrados", label:"¿Qué datos del cliente quedan registrados?", type:"multi", options:["Nombre","Cédula/pasaporte","Teléfono","Correo","Procedencia","Ninguno"]},
+      {id:"controlIngresos", label:"¿Cómo controlan los ingresos/cobros?", type:"single-other", options:["Cuaderno","Excel","Ninguno formal"]},
+      {id:"erroresCobros", label:"¿Han tenido errores en los cobros?", type:"single", options:["Sí","No","A veces"]},
+      {id:"reportes", label:"¿Generan reportes de ocupación/ingresos?", type:"single", options:["Sí, regularmente","A veces","Nunca"]},
+      {id:"tiempoReportes", label:"¿Cuánto toma hacer un corte de caja o reporte con el método actual?", type:"single", options:["Menos de 15 min","15–30 min","30–60 min","Más de 1 hora","No aplica"]},
+      {id:"perdidaMensualEstimada", label:"Estimación de pérdida mensual por errores/reservas no concretadas (opcional, si el dueño da un número)", type:"text", placeholder:"Ej. RD$5,000 — dejar en blanco si no lo saben"},
+      {id:"otrosProblemas", label:"Otros problemas mencionados que no se preguntaron directamente (opcional)", type:"textarea"},
+    ]
+  },
+  {
+    id:"D", title:"D. Personal y estructura",
+    hint:"Define directamente la Población, Universo y Muestra del Cap. III.",
+    fields:[
+      {id:"totalEmpleados", label:"Total de empleados", type:"number"},
+      {id:"personalTipo", label:"¿El personal es fijo o hay rotación por temporada?", type:"single", options:["Todos son fijos","Hay personal por temporada o medio tiempo"]},
+      {id:"rolesCantidad", label:"Cantidad por cargo, y si interactúa con reservas/clientes (esto define la muestra del Cap. III)", type:"role-count-advanced", options:ROLES},
+      {id:"organigrama", label:"¿Existe organigrama formal?", type:"single", options:["Formal (documentado)","Informal (hay jerarquía pero no escrita)","No hay estructura definida"]},
+      {id:"rotacion", label:"¿Ha habido rotación de personal reciente?", type:"single", options:["Sí, y afecta los registros","Sí, pero no afecta mucho","No ha habido rotación"]},
+      {id:"quienReservas", label:"¿Quién realiza las reservas?", type:"single", options:ROLES},
+      {id:"quienCheckin", label:"¿Quién hace check-in / check-out?", type:"single", options:ROLES},
+      {id:"quienCobros", label:"¿Quién maneja los cobros?", type:"single", options:ROLES},
+      {id:"quienLimpieza", label:"¿Quién realiza la limpieza?", type:"single", options:ROLES},
+      {id:"quienReportes", label:"¿Quién generaría/revisaría reportes?", type:"single", options:ROLES},
+    ]
+  },
+  {
+    id:"E", title:"E. Tecnología y disposición al cambio",
+    hint:"Para Justificación y Viabilidad (Cap. I).",
+    fields:[
+      {id:"equipos", label:"Equipos tecnológicos disponibles", type:"multi", options:["PC de escritorio","Laptop","Impresora","POS / lector de tarjetas","Tablet","Ninguno"]},
+      {id:"internet", label:"¿Tienen internet?", type:"single", options:["Estable","Inestable","Solo datos móviles","No tiene"]},
+      {id:"presenciaDigital", label:"¿Presencia digital?", type:"multi", options:["Página web","Redes sociales","Registrado en Booking/Airbnb","Ninguna"]},
+      {id:"experienciaPersonal", label:"¿El personal tiene experiencia usando sistemas/software?", type:"single", options:["Ninguna experiencia","Experiencia básica (Office, WhatsApp Business)","Experiencia previa con sistemas similares"]},
+      {id:"disposicionImplementar", label:"¿Estarían dispuestos a implementar un sistema y capacitar al personal?", type:"single", options:["Sí, totalmente","Con reservas","No"]},
+      {id:"personasCapacitar", label:"¿Cuántas personas necesitarían capacitación? (opcional)", type:"number"},
+      {id:"energia", label:"Energía eléctrica", type:"multi", options:["Estable","Apagones frecuentes","Tienen planta eléctrica","Tienen UPS/inversor"]},
+      {id:"restricciones", label:"¿Alguna restricción a considerar?", type:"multi-other", options:["Económica","Legal","Infraestructura","Ninguna"]},
+      {id:"funcionalidadesDeseadas", label:"¿Qué le gustaría que tuviera el sistema, según el dueño? (opcional)", type:"textarea"},
+    ]
+  },
+  {
+    id:"F", title:"F. Observación directa del investigador",
+    hint:"Esto lo llenas tú con lo que observas, no con lo que declaran — es evidencia de primera mano (ficha de observación) y complementa la entrevista.",
+    fields:[
+      {id:"recepcionOrganizada", label:"¿Cómo está organizada el área de recepción?", type:"single", options:["Ordenada y visible","Básica pero funcional","Desorganizada / informal"]},
+      {id:"registroFisicoObservado", label:"¿Observaste algún cuaderno o registro físico en uso?", type:"single", options:["Sí, cuaderno en uso activo","Sí, pero parece desactualizado","No se observó ninguno"]},
+      {id:"equipoTecObservado", label:"¿Observaste algún equipo tecnológico en uso durante la visita?", type:"single", options:["Sí, en uso durante la visita","Presente pero sin usar","No se observó ninguno"]},
+      {id:"actitudPersonal", label:"Actitud general del dueño/personal hacia el proyecto", type:"single", options:["Entusiasmo claro","Interés moderado","Indiferencia"]},
+      {id:"estadoGeneral", label:"Estado general/mantenimiento del hotel", type:"single", options:["Muy bien mantenido","Aceptable","Necesita mejoras visibles"]},
+      {id:"clienteObservado", label:"¿Se observó algún cliente/huésped durante la visita?", type:"single", options:["Sí","No"]},
+      {id:"documentosObtenidos", label:"Documentos/evidencia obtenidos durante la visita", type:"multi", options:["Foto de la fachada","Foto de recepción","Foto del cuaderno/registro","Foto del organigrama","Ninguno"]},
+      {id:"observacionesAdicionales", label:"Otras observaciones relevantes (opcional)", type:"textarea"},
+    ]
+  },
+  {
+    id:"G", title:"G. Control de visita y consentimiento",
+    hint:"Datos de cierre de la entrevista.",
+    fields:[
+      {id:"fechaVisita", label:"Fecha de visita", type:"date"},
+      {id:"horaInicio", label:"Hora de inicio", type:"time"},
+      {id:"horaFin", label:"Hora de finalización", type:"time"},
+      {id:"entrevistadoNombre", label:"Nombre de la persona entrevistada", type:"text"},
+      {id:"entrevistadoCargo", label:"Cargo", type:"single-other", options:ROLES},
+      {id:"telefono", label:"Teléfono / contacto", type:"tel"},
+      {id:"investigadores", label:"Investigadores presentes", type:"multi-other", options:["Rhandal Emmanuel De la Rosa Méndez","Luis Enmanuel Ramírez Feliz"]},
+      {id:"proximosPasos", label:"Compromisos o próximos pasos acordados (opcional)", type:"textarea"},
+    ]
+  },
+];
+
+// ---------- state ----------
+let current = 0;
+let data = {};
+let editingKey = null;
+let conclusionManual = false;
+let dirtySections = new Set(); // sections touched since their last save (runtime only)
+
+function emptyData(){
+  const d = {};
+  sections.forEach(s=>s.fields.forEach(f=>{
+    if(f.type.startsWith("multi")) d[f.id] = [];
+    else if(f.type==="role-count") d[f.id] = {};
+    else if(f.type==="role-count-advanced") d[f.id] = {};
+    else d[f.id] = "";
+    if(f.type.endsWith("-other")) d[f.id+"_other"] = "";
+    if(f.details) f.details.forEach(det=>{ d[det.key] = ""; });
+  }));
+  d.consent = false;
+  d.conclusion = "";
+  d.sectionSaved = {}; // { A: "2026-07-05T12:00:00.000Z", B: ... }
+  return d;
+}
+data = emptyData();
+
+const fieldToSection = {};
+sections.forEach(s=>s.fields.forEach(f=>{
+  fieldToSection[f.id] = s.id;
+  if(f.type.endsWith("-other")) fieldToSection[f.id+"_other"] = s.id;
+  if(f.details) f.details.forEach(det=>{ fieldToSection[det.key] = s.id; });
+}));
+fieldToSection["consent"] = "G";
+
+function fieldSectionId(fieldId){
+  return fieldToSection[fieldId] || null;
+}
+function markDirty(fieldId){
+  const sid = fieldSectionId(fieldId);
+  if(sid) dirtySections.add(sid);
+}
+
+// ---------- scoring ----------
+function scoreHabitaciones(v){
+  if(["15–25 (ideal)","26–40 (ideal)"].includes(v)) return 1;
+  if(["10–14","41–60"].includes(v)) return 0.5;
+  return 0;
+}
+function scoreOcupacion(v){
+  if(v==="Constante / variable moderada (ideal)") return 1;
+  if(v==="Muy estacional (1-2 picos al año)") return 0.4;
+  return 0;
+}
+function scoreRoles(v){ return v==="Más de un rol (ideal)" ? 1 : 0; }
+function scoreProblema(){
+  let s = 0;
+  if(data.problemasFrecuentes==="Sí, tienen problemas claros y frecuentes") s=1;
+  else if(data.problemasFrecuentes==="Sí, mencionan problemas ocasionales") s=0.6;
+  else if(data.problemasFrecuentes==="No mencionan problemas") s=0.15;
+  if(data.reservasPerdidas==="Frecuentemente" || data.overbooking==="Frecuentemente") s = Math.min(1, s+0.3);
+  return s;
+}
+function scoreSoftware(v){
+  if(v==="No tiene ningún software") return 1;
+  if(v==="Solo Excel / Google Sheets básico") return 0.5;
+  return 0;
+}
+function scoreDisposicion(v){
+  if(v==="Sí, con disposición clara (ideal)") return 1;
+  if(v==="Con reservas / hay que insistir") return 0.4;
+  return 0;
+}
+function computeScore(){
+  const total =
+    15*scoreHabitaciones(data.habitaciones) +
+    20*scoreOcupacion(data.ocupacion) +
+    10*scoreRoles(data.roles) +
+    25*scoreProblema() +
+    15*scoreSoftware(data.softwareActual) +
+    15*scoreDisposicion(data.disposicion);
+  return Math.round(total);
+}
+function scoreConclusion(score){
+  if(score>=70) return "Cumple el perfil";
+  if(score>=50) return "Cumple parcialmente";
+  return "No cumple";
+}
+
+// ---------- render helpers ----------
+const panelsEl = document.getElementById("panels");
+const trackEl = document.getElementById("stampTrack");
+
+function isSectionSaved(sectionId){
+  return !!(data.sectionSaved && data.sectionSaved[sectionId]) && !dirtySections.has(sectionId);
+}
+function renderStamps(){
+  trackEl.innerHTML = "";
+  sections.forEach((s,i)=>{
+    const b = document.createElement("div");
+    let cls = "stamp" + (i===current?" active":"");
+    if(isSectionSaved(s.id)) cls += " saved";
+    else if(isSectionFilled(i)) cls += " done";
+    b.className = cls;
+    b.textContent = (isSectionSaved(s.id) ? "✓ " : "") + s.id;
+    b.title = s.title + (isSectionSaved(s.id) ? " — guardada" : isSectionFilled(i) ? " — sin guardar" : "");
+    b.onclick = ()=>{ current=i; renderAll(); };
+    trackEl.appendChild(b);
+  });
+  const savedCount = sections.filter(s=>isSectionSaved(s.id)).length;
+  const progEl = document.getElementById("progressLine");
+  if(progEl) progEl.textContent = `Progreso: ${savedCount} de ${sections.length} secciones guardadas`;
+}
+function isSectionFilled(i){
+  return sections[i].fields.some(f=>{
+    const v = data[f.id];
+    if(Array.isArray(v)) return v.length>0;
+    if(typeof v === "object" && v!==null) return Object.keys(v).length>0 && Object.values(v).some(x=> x && (typeof x!=='object' || x.cantidad || x.interactua));
+    return v && v.toString().trim()!=="";
+  });
+}
+
+function detailBlock(f, forValue, arrCheck){
+  if(!f.details) return "";
+  return f.details.filter(det=>det.value===forValue || (arrCheck && arrCheck.includes(det.value))).map(det=>{
+    const show = arrCheck ? arrCheck.includes(det.value) : (data[f.id]===det.value);
+    const val = data[det.key]||"";
+    const tag = det.area ? "textarea" : "input type='text'";
+    return `<div class="inline-text" style="display:${show?'block':'none'};margin-top:8px;">
+      <label class="helper">${det.label}</label>
+      ${det.area
+        ? `<textarea oninput="onText('${det.key}', this.value)">${val}</textarea>`
+        : `<input type="text" value="${val.replace(/"/g,'&quot;')}" oninput="onText('${det.key}', this.value)">`
+      }
+    </div>`;
+  }).join("");
+}
+
+function fieldHTML(f, idx){
+  let inner = "";
+  const val = data[f.id];
+
+  if(["text","number","date","time","tel"].includes(f.type)){
+    inner = `<input type="${f.type}" value="${(val||"").toString().replace(/"/g,'&quot;')}" placeholder="${f.placeholder||''}" oninput="onText('${f.id}', this.value)">`;
+  } else if(f.type==="textarea"){
+    inner = `<textarea oninput="onText('${f.id}', this.value)">${val||""}</textarea>`;
+  } else if(f.type==="single" || f.type==="single-other"){
+    const opts = f.options.map(o=>{
+      const sel = val===o ? " selected":"";
+      return `<div class="opt${sel}" onclick="onSingle('${f.id}',${JSON.stringify(o)})">${o}</div>`;
+    }).join("");
+    const otherOpt = f.type==="single-other" ? `<div class="opt${val==="Otro"?" selected":""}" onclick="onSingle('${f.id}','Otro')">Otro</div>` : "";
+    inner = `<div class="options">${opts}${otherOpt}</div>`;
+    if(f.type==="single-other"){
+      inner += `<div class="inline-text" style="display:${val==='Otro'?'block':'none'};margin-top:8px;"><input type="text" placeholder="Especificar..." value="${(data[f.id+'_other']||'').replace(/"/g,'&quot;')}" oninput="onText('${f.id}_other', this.value)"></div>`;
+    }
+    inner += detailBlock(f, val, null);
+  } else if(f.type==="multi" || f.type==="multi-other"){
+    const arr = val || [];
+    const opts = f.options.map(o=>{
+      const sel = arr.includes(o) ? " selected multi":"";
+      return `<div class="opt${sel}" onclick="onMulti('${f.id}',${JSON.stringify(o)})">${o}</div>`;
+    }).join("");
+    const otherOpt = f.type==="multi-other" ? `<div class="opt${arr.includes('Otro')?' selected multi':''}" onclick="onMulti('${f.id}','Otro')">Otro</div>` : "";
+    inner = `<div class="options">${opts}${otherOpt}</div>`;
+    if(f.type==="multi-other"){
+      inner += `<div class="inline-text" style="display:${arr.includes('Otro')?'block':'none'};margin-top:8px;"><input type="text" placeholder="Especificar..." value="${(data[f.id+'_other']||'').replace(/"/g,'&quot;')}" oninput="onText('${f.id}_other', this.value)"></div>`;
+    }
+    inner += detailBlock(f, null, arr);
+  } else if(f.type==="role-count"){
+    const obj = val || {};
+    inner = `<div class="role-grid">` + f.options.map(o=>{
+      return `<div class="rlabel">${o}</div><input type="number" min="0" value="${obj[o]||''}" placeholder="0" oninput="onRoleCount('${f.id}',${JSON.stringify(o)}, this.value)"><div></div>`;
+    }).join("") + `</div>`;
+  } else if(f.type==="role-count-advanced"){
+    const obj = val || {};
+    inner = `<div class="role-grid">
+      <div class="hd">Cargo</div><div class="hd">Cant.</div><div class="hd">¿Interactúa con clientes?</div>` +
+      f.options.map(o=>{
+        const entry = obj[o] || {cantidad:"", interactua:false};
+        return `<div class="rlabel">${o}</div>
+          <input type="number" min="0" value="${entry.cantidad||''}" placeholder="0" oninput="onRoleAdvCant('${f.id}',${JSON.stringify(o)}, this.value)">
+          <div class="toggle-chip${entry.interactua?' on':''}" onclick="onRoleAdvToggle('${f.id}',${JSON.stringify(o)})">${entry.interactua?'Sí':'No'}</div>`;
+      }).join("") + `</div>`;
+  }
+
+  return `<div class="field">
+    <label class="q"><span class="n">${idx+1}.</span>${f.label}</label>
+    ${inner}
+  </div>`;
+}
+
+function scoreBoxHTML(){
+  const score = computeScore();
+  const label = conclusionManual ? data.conclusion : scoreConclusion(score);
+  if(!conclusionManual) data.conclusion = label;
+  const cls = label==="Cumple el perfil"?"cumple":label==="Cumple parcialmente"?"parcial":"no";
+  const warn = data.accesibilidad==="Difícil / distante" ? `<div class="score-warn">⚠ Accesibilidad difícil: aunque el puntaje sea alto, considera el costo/tiempo de visitas frecuentes.</div>` : "";
+  return `
+    <div class="score-box">
+      <span class="score-num">${score}</span><span class="score-label ${cls}">${label}</span>
+      <div class="score-note">Puntaje automático (0-100) según habitaciones, ocupación, roles, problema evidente, ausencia de software y disposición del dueño. ≥70 viable · 50-69 revisar · &lt;50 descartar.</div>
+      ${warn}
+      <div class="override-row">
+        <div class="label">¿No estás de acuerdo? Elige manualmente:</div>
+        <div class="options">
+          ${["Cumple el perfil","Cumple parcialmente","No cumple"].map(o=>{
+            const sel = conclusionManual && data.conclusion===o ? " selected":"";
+            return `<div class="opt${sel}" onclick="onManualConclusion(${JSON.stringify(o)})">${o}</div>`;
+          }).join("")}
+          ${conclusionManual ? `<div class="opt" onclick="onResetConclusion()">Usar automático</div>` : ""}
+        </div>
+      </div>
+    </div>
+  `;
+}
+function onManualConclusion(v){ conclusionManual=true; data.conclusion=v; renderPanels(); }
+function onResetConclusion(){ conclusionManual=false; renderPanels(); }
+
+function renderPanels(){
+  panelsEl.innerHTML = "";
+  sections.forEach((s,i)=>{
+    const div = document.createElement("div");
+    div.className = "panel" + (i===current?" active":"");
+    let fieldsHTML = s.fields.map((f,idx)=>fieldHTML(f, idx)).join("");
+    let scoreHTML = s.id==="A" ? scoreBoxHTML() : "";
+
+    let extra = "";
+    if(s.id==="G"){
+      const hi = data.horaInicio, hf = data.horaFin;
+      let durText = "";
+      if(hi && hf){
+        const [h1,m1]=hi.split(":").map(Number), [h2,m2]=hf.split(":").map(Number);
+        let mins = (h2*60+m2)-(h1*60+m1);
+        if(mins<0) mins+=24*60;
+        durText = `<div class="helper">Duración calculada: ${Math.floor(mins/60)}h ${mins%60}min</div>`;
+      }
+      extra = durText + `
+      <div class="consent">
+        <input type="checkbox" id="consentBox" ${data.consent?"checked":""} onchange="onConsent(this.checked)">
+        <label for="consentBox">Declaro que la información suministrada es verídica y autorizo su uso con fines académicos para este proyecto de tesis.</label>
+      </div>`;
+    }
+
+    div.innerHTML = `
+      <h2 class="section-title">${s.title}</h2>
+      <p class="section-hint">${s.hint}</p>
+      ${scoreHTML}
+      ${fieldsHTML}
+      ${extra}
+      <div class="save-bar">
+        <button onclick="saveSection('${s.id}')">${i===sections.length-1 ? "Guardar y finalizar" : "Guardar esta sección"}</button>
+        <span class="save-msg" id="saveMsg_${s.id}"></span>
+      </div>
+    `;
+    panelsEl.appendChild(div);
+  });
+  document.getElementById("btnBack").disabled = current===0;
+  document.getElementById("btnNext").style.display = current===sections.length-1 ? "none":"inline-block";
+}
+function renderAll(){ renderStamps(); renderPanels(); }
+
+// ---------- handlers ----------
+function onText(id, v){ data[id]=v; markDirty(id); if(current===sections.length-1) renderPanels(); renderStamps(); }
+function onSingle(id, v){ data[id] = (data[id]===v) ? "" : v; markDirty(id); renderPanels(); renderStamps(); }
+function onMulti(id, v){
+  const arr = data[id]||[];
+  const i = arr.indexOf(v);
+  if(i>-1) arr.splice(i,1); else arr.push(v);
+  data[id]=arr; markDirty(id); renderPanels(); renderStamps();
+}
+function onRoleCount(id, role, v){ if(!data[id]) data[id]={}; data[id][role]=v; markDirty(id); renderStamps(); }
+function onRoleAdvCant(id, role, v){
+  if(!data[id]) data[id]={};
+  if(!data[id][role]) data[id][role]={cantidad:"",interactua:false};
+  data[id][role].cantidad = v;
+  markDirty(id); renderStamps();
+}
+function onRoleAdvToggle(id, role){
+  if(!data[id]) data[id]={};
+  if(!data[id][role]) data[id][role]={cantidad:"",interactua:false};
+  data[id][role].interactua = !data[id][role].interactua;
+  markDirty(id);
+  renderPanels();
+}
+function onConsent(v){ data.consent = v; markDirty("consent"); renderStamps(); }
+function refreshDoneStamp(){ renderStamps(); }
+
+document.getElementById("btnNext").onclick = ()=>{ if(current<sections.length-1){ current++; renderAll(); window.scrollTo({top:0,behavior:"smooth"}); } };
+document.getElementById("btnBack").onclick = ()=>{ if(current>0){ current--; renderAll(); window.scrollTo({top:0,behavior:"smooth"}); } };
+
+// ---------- localStorage persistence ----------
+const LS_INDEX = "hotelform_index";
+function slug(str){
+  return (str||"sin-nombre").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+}
+function getIndex(){
+  try{ return JSON.parse(localStorage.getItem(LS_INDEX) || "[]"); }catch(e){ return []; }
+}
+function setIndex(arr){ localStorage.setItem(LS_INDEX, JSON.stringify(arr)); }
+
+function persistData(){
+  const key = editingKey || ("hotel_" + slug(data.hotelName) + "_" + Date.now());
+  const payload = {...data, savedAt: new Date().toISOString()};
+  localStorage.setItem(key, JSON.stringify(payload));
+  const idx = getIndex();
+  if(!idx.includes(key)){ idx.push(key); setIndex(idx); }
+  editingKey = key;
+  return key;
+}
+
+function saveSection(sectionId){
+  const msg = document.getElementById("saveMsg_"+sectionId);
+  if(!data.hotelName || data.hotelName.trim()===""){
+    if(msg){ msg.textContent = "Primero escribe el nombre del hotel (Sección A)."; msg.style.color = "var(--bad)"; }
+    return;
+  }
+  try{
+    data.sectionSaved[sectionId] = new Date().toISOString();
+    dirtySections.delete(sectionId);
+    persistData();
+    if(msg){ msg.textContent = "Guardado ✓ (" + new Date().toLocaleTimeString() + ")"; msg.style.color = "var(--good)"; }
+    renderStamps();
+  }catch(e){
+    if(msg){ msg.textContent = "Error al guardar: " + e.message; msg.style.color = "var(--bad)"; }
+  }
+}
+
+function loadLibrary(){
+  const listEl = document.getElementById("libraryList");
+  const idx = getIndex();
+  if(idx.length===0){
+    listEl.innerHTML = "<div class='empty'>Aún no has guardado ningún hotel. Completa cualquier sección y presiona \"Guardar esta sección\".</div>";
+    return;
+  }
+  const entries = [];
+  idx.forEach(key=>{
+    try{
+      const raw = localStorage.getItem(key);
+      if(raw) entries.push({key, d: JSON.parse(raw)});
+    }catch(e){}
+  });
+  entries.sort((a,b)=> (b.d.savedAt||"").localeCompare(a.d.savedAt||""));
+  listEl.innerHTML = "";
+  entries.forEach(({key,d})=>{
+    const tagClass = d.conclusion==="Cumple el perfil" ? "cumple" : d.conclusion==="Cumple parcialmente" ? "parcial" : "no";
+    const savedCount = sections.filter(s=> d.sectionSaved && d.sectionSaved[s.id]).length;
+    const div = document.createElement("div");
+    div.className = "lib-item";
+    div.innerHTML = `
+      <div>
+        <div class="name">${d.hotelName||"(sin nombre)"}</div>
+        <div class="meta">${d.municipio||""} ${d.savedAt ? "· "+new Date(d.savedAt).toLocaleString() : ""} · ${savedCount}/${sections.length} secciones guardadas</div>
+        ${d.conclusion ? `<span class="tag ${tagClass}">${d.conclusion}</span>`:""}
+      </div>
+      <div class="lib-actions">
+        <button onclick="editEntry('${key}')">Continuar / Editar</button>
+        <button onclick="exportEntry('${key}')">Exportar texto</button>
+        <button class="danger" onclick="deleteEntry('${key}')">Eliminar</button>
+      </div>
+    `;
+    listEl.appendChild(div);
+  });
+}
+
+function editEntry(key){
+  try{
+    const raw = localStorage.getItem(key);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      data = {...emptyData(), ...parsed};
+      if(!data.sectionSaved) data.sectionSaved = {};
+      dirtySections.clear();
+      conclusionManual = true;
+      editingKey = key;
+      current = 0;
+      showForm();
+      renderAll();
+    }
+  }catch(e){ alert("No se pudo cargar este registro."); }
+}
+
+function deleteEntry(key){
+  if(!confirm("¿Eliminar este hotel guardado? No se puede deshacer.")) return;
+  localStorage.removeItem(key);
+  setIndex(getIndex().filter(k=>k!==key));
+  loadLibrary();
+}
+
+function exportEntry(key){
+  const raw = localStorage.getItem(key);
+  if(!raw) return;
+  const d = JSON.parse(raw);
+  let text = `FORMULARIO — ${d.hotelName}\n\n`;
+  sections.forEach(s=>{
+    text += `${s.title}\n`;
+    s.fields.forEach(f=>{
+      let v = d[f.id];
+      if(Array.isArray(v)) v = v.join(", ");
+      else if(f.type==="role-count-advanced" && typeof v==="object"){
+        v = Object.entries(v).filter(([k,o])=>o && o.cantidad).map(([k,o])=>`${k}: ${o.cantidad}${o.interactua?" (interactúa con clientes)":""}`).join("; ");
+      } else if(typeof v === "object" && v!==null){
+        v = Object.entries(v).filter(([k,n])=>n).map(([k,n])=>`${k}: ${n}`).join(", ");
+      }
+      if(d[f.id+"_other"]) v += ` (${d[f.id+"_other"]})`;
+      if(f.details) f.details.forEach(det=>{ if(d[det.key]) v += ` — ${det.label}: ${d[det.key]}`; });
+      text += `- ${f.label}: ${v||"—"}\n`;
+    });
+    text += "\n";
+  });
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      alert("Copiado al portapapeles.");
+    }).catch(()=>{
+      showExportFallback(text);
+    });
+  } else {
+    showExportFallback(text);
+  }
+}
+function showExportFallback(text){
+  const w = window.open("");
+  if(w){
+    w.document.write("<pre style='white-space:pre-wrap;font-family:Arial,sans-serif;padding:16px;'>"+text.replace(/</g,"&lt;")+"</pre>");
+  } else {
+    alert("No se pudo copiar automáticamente. Aquí está el texto:\n\n" + text);
+  }
+}
+
+function downloadBackup(){
+  const idx = getIndex();
+  const all = {};
+  idx.forEach(k=>{ const raw = localStorage.getItem(k); if(raw) all[k]=JSON.parse(raw); });
+  const json = JSON.stringify({index:idx, entries:all}, null, 2);
+  const filename = "respaldo_formulario_hotel_" + new Date().toISOString().slice(0,10) + ".json";
+  try{
+    if(window.URL && URL.createObjectURL){
+      const blob = new Blob([json], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      throw new Error("createObjectURL no disponible");
+    }
+  }catch(e){
+    try{
+      const a = document.createElement("a");
+      a.href = "data:application/json;charset=utf-8," + encodeURIComponent(json);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }catch(e2){
+      alert("No se pudo descargar automáticamente. Copia este JSON manualmente:\n\n" + json.slice(0,500) + "...");
+    }
+  }
+}
+function restoreBackup(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const parsed = JSON.parse(e.target.result);
+      const idx = getIndex();
+      Object.keys(parsed.entries||{}).forEach(k=>{
+        localStorage.setItem(k, JSON.stringify(parsed.entries[k]));
+        if(!idx.includes(k)) idx.push(k);
+      });
+      setIndex(idx);
+      loadLibrary();
+      alert("Respaldo restaurado.");
+    }catch(err){ alert("Archivo de respaldo inválido."); }
+  };
+  reader.readAsText(file);
+}
+
+// ---------- view toggling ----------
+function showForm(){
+  document.getElementById("formView").style.display = "block";
+  document.getElementById("libraryView").style.display = "none";
+  document.getElementById("stampTrack").style.display = "flex";
+  document.getElementById("toggleLibrary").textContent = "Hoteles guardados";
+}
+function showLibrary(){
+  document.getElementById("formView").style.display = "none";
+  document.getElementById("libraryView").style.display = "block";
+  document.getElementById("stampTrack").style.display = "none";
+  document.getElementById("toggleLibrary").textContent = "← Volver al formulario";
+  loadLibrary();
+}
+let libraryOpen = false;
+document.getElementById("toggleLibrary").onclick = ()=>{
+  libraryOpen = !libraryOpen;
+  if(libraryOpen) showLibrary(); else showForm();
+};
+document.getElementById("newEntryBtn").onclick = ()=>{
+  if(dirtySections.size>0 && !confirm("Hay cambios sin guardar en la sección actual. ¿Empezar un hotel nuevo de todas formas? Se perderá lo no guardado.")) return;
+  data = emptyData();
+  dirtySections.clear();
+  editingKey = null;
+  conclusionManual = false;
+  current = 0;
+  libraryOpen = false;
+  showForm();
+  renderAll();
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+
+// ---------- home screen icon + manifest (generated at runtime) ----------
+(function setupIcon(){
+  try{
+    const c = document.createElement("canvas");
+    c.width = 180; c.height = 180;
+    const ctx = c.getContext("2d");
+    if(!ctx) return;
+    ctx.fillStyle = "#1b3a5c"; ctx.fillRect(0,0,180,180);
+    ctx.strokeStyle = "#d97b2b"; ctx.lineWidth = 8;
+    ctx.strokeRect(14,14,152,152);
+    ctx.fillStyle = "#faf6ee";
+    ctx.font = "bold 64px Georgia, serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("HG", 90, 96);
+    const dataUrl = c.toDataURL("image/png");
+    const iconEl = document.getElementById("appleTouchIcon");
+    if(iconEl) iconEl.setAttribute("href", dataUrl);
+
+    const manifest = {
+      name: "Formulario Hotel — Tesis UCATEBA",
+      short_name: "Form. Hotel",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#faf6ee",
+      theme_color: "#1b3a5c",
+      icons: [{ src: dataUrl, sizes: "180x180", type: "image/png" }]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:"application/json"});
+    const manifestEl = document.getElementById("manifestLink");
+    if(manifestEl) manifestEl.setAttribute("href", URL.createObjectURL(blob));
+  }catch(e){
+    console.warn("No se pudo generar el ícono/manifest (no afecta el formulario):", e.message);
+  }
+})();
+
+// ---------- init ----------
+renderAll();
+</script>
+</body>
+</html>
