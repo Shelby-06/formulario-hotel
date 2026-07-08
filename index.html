@@ -14,6 +14,10 @@
 <link id="appleTouchIcon" rel="apple-touch-icon">
 <link id="manifestLink" rel="manifest">
 
+<!-- Firebase (sincronización en la nube) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
 <style>
   :root{
     --navy:#1b3a5c;
@@ -51,7 +55,13 @@
   }
   .topbar h1{font-size:16px;margin:0;font-weight:normal;}
   .topbar .sub{font-family:Arial, sans-serif;font-size:10.5px;opacity:.75;margin-top:2px;}
-  .topbar-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .topbar-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .cloud-status{
+    font-family:Arial, sans-serif;font-size:10.5px;padding:6px 9px;border-radius:12px;
+    border:1px solid rgba(255,255,255,.3);color:#cdd8e4;
+  }
+  .cloud-status.online{color:#8fe0b3;border-color:#3f7d5c;background:rgba(63,125,92,.2);}
+  .cloud-status.offline{color:#e0b38f;border-color:#c0562a;background:rgba(192,86,42,.15);}
   .topbar button{
     font-family:Arial, sans-serif;
     background:transparent;
@@ -199,6 +209,7 @@
     <div class="sub">Tesis · Sistema de Gestión Hotelera · UCATEBA</div>
   </div>
   <div class="topbar-actions">
+    <span id="cloudStatus" class="cloud-status offline" title="Conectando...">● nube</span>
     <button id="newEntryBtn">+ Nuevo hotel</button>
     <button id="toggleLibrary">Hoteles guardados</button>
   </div>
@@ -655,7 +666,86 @@ function refreshDoneStamp(){ renderStamps(); }
 document.getElementById("btnNext").onclick = ()=>{ if(current<sections.length-1){ current++; renderAll(); window.scrollTo({top:0,behavior:"smooth"}); } };
 document.getElementById("btnBack").onclick = ()=>{ if(current>0){ current--; renderAll(); window.scrollTo({top:0,behavior:"smooth"}); } };
 
-// ---------- localStorage persistence ----------
+// ---------- Firebase (sincronización en la nube) ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyD2CR8uG5YsV4qPlomRkSDDMh3gtEYN6xE",
+  authDomain: "hotel-tesis.firebaseapp.com",
+  projectId: "hotel-tesis",
+  storageBucket: "hotel-tesis.firebasestorage.app",
+  messagingSenderId: "543722902690",
+  appId: "1:543722902690:web:f9d808d529512bc76633fb"
+};
+let fbDb = null;
+let fbReady = false;
+try{
+  if(typeof firebase !== "undefined"){
+    firebase.initializeApp(firebaseConfig);
+    fbDb = firebase.firestore();
+    fbDb.enablePersistence({synchronizeTabs:true}).catch(e=>{
+      console.warn("Persistencia offline de Firestore no disponible:", e.message);
+    });
+    fbReady = true;
+  }
+}catch(e){
+  console.warn("Firebase no se pudo inicializar — la app seguirá funcionando en modo solo local.", e.message);
+  fbReady = false;
+}
+
+function updateCloudStatus(online){
+  const el = document.getElementById("cloudStatus");
+  if(!el) return;
+  el.className = "cloud-status " + (online ? "online" : "offline");
+  el.textContent = online ? "● nube" : "○ local";
+  el.title = online ? "Sincronizado con la nube (Firebase)" : "Sin conexión a la nube — guardando solo en este dispositivo";
+}
+
+function syncToCloud(key, payload){
+  if(!fbReady || !fbDb) { updateCloudStatus(false); return; }
+  fbDb.collection("hotels").doc(key).set(payload)
+    .then(()=> updateCloudStatus(true))
+    .catch(e=>{ console.warn("No se pudo sincronizar con la nube:", e.message); updateCloudStatus(false); });
+}
+function deleteFromCloud(key){
+  if(!fbReady || !fbDb) return;
+  fbDb.collection("hotels").doc(key).delete().catch(e=>console.warn("No se pudo eliminar de la nube:", e.message));
+}
+
+// Escucha cambios en tiempo real (por ejemplo, cuando Luis guarda un hotel desde otro dispositivo)
+let unsubscribeRealtime = null;
+function setupRealtimeSync(){
+  if(!fbReady || !fbDb) return;
+  unsubscribeRealtime = fbDb.collection("hotels").onSnapshot(snapshot=>{
+    let changed = false;
+    snapshot.docChanges().forEach(change=>{
+      const key = change.doc.id;
+      if(change.type === "removed"){
+        localStorage.removeItem(key);
+        setIndex(getIndex().filter(k=>k!==key));
+        changed = true;
+      } else {
+        const cloudData = change.doc.data();
+        let localData = null;
+        try{ const raw = localStorage.getItem(key); if(raw) localData = JSON.parse(raw); }catch(e){}
+        // el dato más reciente gana (por savedAt); si es la misma pestaña que acaba de guardar, no pasa nada distinto
+        if(!localData || !localData.savedAt || (cloudData.savedAt && cloudData.savedAt >= localData.savedAt)){
+          localStorage.setItem(key, JSON.stringify(cloudData));
+          const idx = getIndex();
+          if(!idx.includes(key)){ idx.push(key); setIndex(idx); }
+          changed = true;
+        }
+      }
+    });
+    updateCloudStatus(true);
+    if(changed && document.getElementById("libraryView").style.display !== "none"){
+      loadLibrary();
+    }
+  }, err=>{
+    console.warn("Error de sincronización en tiempo real:", err.message);
+    updateCloudStatus(false);
+  });
+}
+
+// ---------- localStorage persistence (fuente local, siempre activa) ----------
 const LS_INDEX = "hotelform_index";
 function slug(str){
   return (str||"sin-nombre").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
@@ -672,6 +762,7 @@ function persistData(){
   const idx = getIndex();
   if(!idx.includes(key)){ idx.push(key); setIndex(idx); }
   editingKey = key;
+  syncToCloud(key, payload); // best-effort, nunca bloquea ni rompe el guardado local
   return key;
 }
 
@@ -692,8 +783,34 @@ function saveSection(sectionId){
   }
 }
 
-function loadLibrary(){
+async function loadLibrary(){
   const listEl = document.getElementById("libraryList");
+  if(fbReady && fbDb){ listEl.innerHTML = "<div class='empty'>Cargando...</div>"; }
+
+  // 1. Trae lo que haya en la nube y lo fusiona con lo local (el más reciente gana)
+  if(fbReady && fbDb){
+    try{
+      const snap = await fbDb.collection("hotels").get();
+      const idx = getIndex();
+      snap.forEach(docSnap=>{
+        const key = docSnap.id;
+        const cloudData = docSnap.data();
+        let localData = null;
+        try{ const raw = localStorage.getItem(key); if(raw) localData = JSON.parse(raw); }catch(e){}
+        if(!localData || !localData.savedAt || (cloudData.savedAt && cloudData.savedAt >= localData.savedAt)){
+          localStorage.setItem(key, JSON.stringify(cloudData));
+          if(!idx.includes(key)) idx.push(key);
+        }
+      });
+      setIndex(idx);
+      updateCloudStatus(true);
+    }catch(e){
+      console.warn("No se pudo leer la nube, mostrando solo lo guardado en este dispositivo:", e.message);
+      updateCloudStatus(false);
+    }
+  }
+
+  // 2. Renderiza desde la copia local (ya fusionada)
   const idx = getIndex();
   if(idx.length===0){
     listEl.innerHTML = "<div class='empty'>Aún no has guardado ningún hotel. Completa cualquier sección y presiona \"Guardar esta sección\".</div>";
@@ -750,6 +867,7 @@ function deleteEntry(key){
   if(!confirm("¿Eliminar este hotel guardado? No se puede deshacer.")) return;
   localStorage.removeItem(key);
   setIndex(getIndex().filter(k=>k!==key));
+  deleteFromCloud(key);
   loadLibrary();
 }
 
@@ -914,6 +1032,8 @@ document.getElementById("newEntryBtn").onclick = ()=>{
 
 // ---------- init ----------
 renderAll();
+updateCloudStatus(fbReady);
+setupRealtimeSync();
 </script>
 </body>
 </html>
