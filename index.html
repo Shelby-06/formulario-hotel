@@ -232,7 +232,7 @@
 
 <script>
 const ROLES = ["Recepción","Limpieza / Housekeeping","Administración / Dueño","Mantenimiento","Cocina / Restaurante","Seguridad","Otro"];
-const MUNICIPIOS = ["Barahona","Cabral","Enriquillo","Paraíso","Polo","Vicente Noble","Tamayo","Galván","Duvergé","Postrer Río","Otro"];
+const MUNICIPIOS = ["Barahona","Cabral","Enriquillo","Paraíso","Polo","Vicente Noble","Tamayo","Galván","Duvergé","Postrer Río"];
 
 const sections = [
   {
@@ -353,7 +353,7 @@ const sections = [
       {id:"horaInicio", label:"Hora de inicio", type:"time"},
       {id:"horaFin", label:"Hora de finalización", type:"time"},
       {id:"entrevistadoNombre", label:"Nombre de la persona entrevistada", type:"text"},
-      {id:"entrevistadoCargo", label:"Cargo", type:"single-other", options:ROLES},
+      {id:"entrevistadoCargo", label:"Cargo", type:"single-other", options:ROLES.slice(0,-1)},
       {id:"telefono", label:"Teléfono / contacto", type:"tel"},
       {id:"investigadores", label:"Investigadores presentes", type:"multi-other", options:["Rhandal Emmanuel De la Rosa Méndez","Luis Enmanuel Ramírez Feliz"]},
       {id:"proximosPasos", label:"Compromisos o próximos pasos acordados (opcional)", type:"textarea"},
@@ -480,6 +480,12 @@ function isSectionFilled(i){
   });
 }
 
+// Safely embeds a string as a single-quoted JS literal inside a double-quoted HTML attribute
+// (JSON.stringify alone produces double quotes, which breaks onclick="..." attributes)
+function jsStr(s){
+  return "'" + String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'") + "'";
+}
+
 function detailBlock(f, forValue, arrCheck){
   if(!f.details) return "";
   return f.details.filter(det=>det.value===forValue || (arrCheck && arrCheck.includes(det.value))).map(det=>{
@@ -507,7 +513,7 @@ function fieldHTML(f, idx){
   } else if(f.type==="single" || f.type==="single-other"){
     const opts = f.options.map(o=>{
       const sel = val===o ? " selected":"";
-      return `<div class="opt${sel}" onclick="onSingle('${f.id}',${JSON.stringify(o)})">${o}</div>`;
+      return `<div class="opt${sel}" onclick="onSingle('${f.id}',${jsStr(o)})">${o}</div>`;
     }).join("");
     const otherOpt = f.type==="single-other" ? `<div class="opt${val==="Otro"?" selected":""}" onclick="onSingle('${f.id}','Otro')">Otro</div>` : "";
     inner = `<div class="options">${opts}${otherOpt}</div>`;
@@ -519,7 +525,7 @@ function fieldHTML(f, idx){
     const arr = val || [];
     const opts = f.options.map(o=>{
       const sel = arr.includes(o) ? " selected multi":"";
-      return `<div class="opt${sel}" onclick="onMulti('${f.id}',${JSON.stringify(o)})">${o}</div>`;
+      return `<div class="opt${sel}" onclick="onMulti('${f.id}',${jsStr(o)})">${o}</div>`;
     }).join("");
     const otherOpt = f.type==="multi-other" ? `<div class="opt${arr.includes('Otro')?' selected multi':''}" onclick="onMulti('${f.id}','Otro')">Otro</div>` : "";
     inner = `<div class="options">${opts}${otherOpt}</div>`;
@@ -530,7 +536,7 @@ function fieldHTML(f, idx){
   } else if(f.type==="role-count"){
     const obj = val || {};
     inner = `<div class="role-grid">` + f.options.map(o=>{
-      return `<div class="rlabel">${o}</div><input type="number" min="0" value="${obj[o]||''}" placeholder="0" oninput="onRoleCount('${f.id}',${JSON.stringify(o)}, this.value)"><div></div>`;
+      return `<div class="rlabel">${o}</div><input type="number" min="0" value="${obj[o]||''}" placeholder="0" oninput="onRoleCount('${f.id}',${jsStr(o)}, this.value)"><div></div>`;
     }).join("") + `</div>`;
   } else if(f.type==="role-count-advanced"){
     const obj = val || {};
@@ -539,8 +545,8 @@ function fieldHTML(f, idx){
       f.options.map(o=>{
         const entry = obj[o] || {cantidad:"", interactua:false};
         return `<div class="rlabel">${o}</div>
-          <input type="number" min="0" value="${entry.cantidad||''}" placeholder="0" oninput="onRoleAdvCant('${f.id}',${JSON.stringify(o)}, this.value)">
-          <div class="toggle-chip${entry.interactua?' on':''}" onclick="onRoleAdvToggle('${f.id}',${JSON.stringify(o)})">${entry.interactua?'Sí':'No'}</div>`;
+          <input type="number" min="0" value="${entry.cantidad||''}" placeholder="0" oninput="onRoleAdvCant('${f.id}',${jsStr(o)}, this.value)">
+          <div class="toggle-chip${entry.interactua?' on':''}" onclick="onRoleAdvToggle('${f.id}',${jsStr(o)})">${entry.interactua?'Sí':'No'}</div>`;
       }).join("") + `</div>`;
   }
 
@@ -566,7 +572,7 @@ function scoreBoxHTML(){
         <div class="options">
           ${["Cumple el perfil","Cumple parcialmente","No cumple"].map(o=>{
             const sel = conclusionManual && data.conclusion===o ? " selected":"";
-            return `<div class="opt${sel}" onclick="onManualConclusion(${JSON.stringify(o)})">${o}</div>`;
+            return `<div class="opt${sel}" onclick="onManualConclusion(${jsStr(o)})">${o}</div>`;
           }).join("")}
           ${conclusionManual ? `<div class="opt" onclick="onResetConclusion()">Usar automático</div>` : ""}
         </div>
